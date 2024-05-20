@@ -7,7 +7,6 @@ if ($obj_mysqli->connect_errno)
     exit;
 }
 
-
 mysqli_set_charset($obj_mysqli, 'utf8');
 
 //Incluímos um codigo aqui...
@@ -17,7 +16,6 @@ $email  ="";
 $cidade ="";
 $uf     ="";
 
-
 //Validando a existência dos dados
 if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) && isset($_POST["uf"]))
 {
@@ -26,7 +24,6 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
 
     elseif(empty($_POST["email"]))
         $erro = "Campo de e-mail obrigatório";
-
     else
     {   
         //Alteramos aqui tambem.
@@ -43,7 +40,7 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
         if($id == -1)
         {
             $stmt = $obj_mysqli->prepare("INSERT INTO `cliente` (`nome`,`email`,`cidade`,`uf`) VALUES (?,?,?,?)");
-            $stmt->bind_param("ssss", $nome, $email, $cidade, $uf, $id);
+            $stmt->bind_param("ssss", $nome, $email, $cidade, $uf);
 
                 if(!$stmt->execute())
                 {
@@ -51,11 +48,29 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
                 }
                 else
                 {
-                    header("Loacation:cadastro.php");
+                    header("Location:cadastro.php");
                     exit;
                 }
             }
+            //
+                //
                 else
+                if(is_numeric($id) && $id >= 1)
+                {
+                    $stmt = $obj_mysqli->prepare("UPDATE `cliente` SET `nome`=?, `email`=?, `cidade`=?, `uf`=? WHERE id = ? ");
+                    $stmt->bind_param('ssssi', $nome, $email, $cidade, $uf, $id);
+
+                    if(!$stmt->execute())
+                    {
+                        $erro = $stmt-> error;
+                    }
+                    else
+                    {
+                        header("Location:cadastro.php");
+                        exit;
+                    }
+                }
+                //retorna um erro.
                 {
                     $erro = "Número Inválido";
                 }
@@ -65,7 +80,6 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
         //Incluimos este bloco, onde vamos verificar a existencia do id passado...    
         if(isset($_GET["id"]) && is_numeric($_GET["id"]))
         {
-                //..,pegamos aqui o id passado...
             $id = (int)$_GET["id"];
 
             if(isset($_GET["del"]))
@@ -79,27 +93,22 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
             }
             else
             {
-
-                //...monstamos a consulta que será realizada....
             $stmt = $obj_mysqli->prepare("SELECT * FROM `cliente` WHERE id = ?"); //
-                //passamos o id como parâmetro, do tipo i = int, inteiro...
             $stmt->bind_param('i', $id);
-                //...mandamos executar a consulta...
             $stmt->execute();
-            //...retornamos o resultado, e atrinuimos á variavel $result...
+
             $result = $stmt->get_result();
-                //...atribuimos o retorno, como um array de valores,
-                //por meio do método fetch_assoc, que realiza um associação dos valores em forma de array...
                 $aux_query = $result->fetch_assoc();
-            //...onde aqui, nós atribuimos as variaveis.
+
+
             $nome = $aux_query["Nome"];
             $email = $aux_query["Email"];
             $cidade = $aux_query["Cidade"];
             $uf = $aux_query["UF"];
 
             $stmt->close();
-            }
         }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -107,7 +116,7 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>CRUD com PHP, de forma simples e facil</title>
 </head>
 <body>
     <?php
@@ -118,13 +127,13 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
     ?>
     <form action="<?=$_SERVER["PHP_SELF"]?>" method="POST">
         Nome: <br>
-        <input type="text" name="nome" placeholder="Qual seu nome?"><br><br>
+        <input type="text" name="nome" placeholder="Qual seu nome?" value="<?=$nome?>"><br><br>
         E-mail: <br>
-        <input type="email" name="email" placeholder="Qual seu e-mail?"><br><br>
+        <input type="email" name="email" placeholder="Qual seu e-mail?" value="<?=$email?>"><br><br>
         Cidade: <br>
-        <input type="text" name="cidade" placeholder="Qual sua cidade?"><br><br>
+        <input type="text" name="cidade" placeholder="Qual sua cidade?" value="<?=$cidade?>"><br><br>
         UF: <br>
-        <input type="text" name="uf" size="2" placeholder="UF">
+        <input type="text" name="uf" size="2" placeholder="UF" value="<?=$uf?>">
         <br><br>
         <input type="hidden" value="<?=$id?>" name="id">
             <!-- Alteramos aqui tambem, para poder mostrar o texto cadastrar, ou salvar, de acordo com o momento. :)-->
@@ -145,7 +154,7 @@ if(isset($_POST["nome"]) && isset($_POST["email"]) && isset($_POST["cidade"]) &&
         $result = $obj_mysqli->query("SELECT * FROM `cliente`");
         while ($aux_query = $result->fetch_assoc())
         {
-            echo '<tr>'
+            echo '<tr>';
             echo '  <td>' .$aux_query["Id"]. '</td>';
             echo '  <td>' .$aux_query["Nome"]. '</td>';
             echo '  <td>' .$aux_query["Email"]. '</td>';
